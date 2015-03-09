@@ -35,7 +35,7 @@ for (i in 1:nrow(regions)) {
 }
 
 metabolite = 'Tyrosine'
-regions = matrix(c(4,3.85,3.25,3.15,3.1,3,7.25,7.15,6.95,6.85),ncol=2,byrow=T)
+regions = matrix(c(7.25,7.15,6.95,6.85,4,3.85,3.25,3.15,3.1,3),ncol=2,byrow=T)
 for (i in 1:nrow(regions)) {
   inxs = which(regions[i,1] >= ppm & ppm >= regions[i,2])
   plot.metabolite(metabolite,metabolite,i,X,inxs)
@@ -48,4 +48,15 @@ X.m = X[inxs,]
 data = cbind(ppm[inxs],X.m)
 colnames(data)[1] = 'ppm'
 colnames(data)[2:ncol(data)] = 1:(ncol(data)-1)
-write.csv(data,file='Tyrosine/train.csv',quote=F,row.names=F)
+write.csv(data,file='Tyrosine/positive_train.csv',quote=F,row.names=F)
+
+inxs = c()
+regions = matrix(c(7.25,7.15,6.95,6.85,4,3.85,3.25,3.15,3.1,3)+1,ncol=2,byrow=T)
+for (i in 1:nrow(regions)) {
+  inxs = c(inxs,which(regions[i,1] >= ppm & ppm >= regions[i,2]))
+}
+X.m = X[inxs,]
+data = cbind(ppm[inxs],X.m)
+colnames(data)[1] = 'ppm'
+colnames(data)[2:ncol(data)] = 1:(ncol(data)-1)
+write.csv(data,file='Tyrosine/negative_train.csv',quote=F,row.names=F)
