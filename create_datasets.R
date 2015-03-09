@@ -40,3 +40,12 @@ for (i in 1:nrow(regions)) {
   inxs = which(regions[i,1] >= ppm & ppm >= regions[i,2])
   plot.metabolite(metabolite,metabolite,i,X,inxs)
 }
+inxs = c()
+for (i in 1:nrow(regions)) {
+  inxs = c(inxs,which(regions[i,1] >= ppm & ppm >= regions[i,2]))
+}
+X.m = X[inxs,]
+data = cbind(ppm[inxs],X.m)
+colnames(data)[1] = 'ppm'
+colnames(data)[2:ncol(data)] = 1:(ncol(data)-1)
+write.csv(data,file='Tyrosine/train.csv',quote=F,row.names=F)
