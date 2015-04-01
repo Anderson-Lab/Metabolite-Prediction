@@ -36,13 +36,18 @@ for (i in 1:nrow(regions)) {
 
 metabolite = 'Tyrosine'
 regions = matrix(c(7.25,7.15,6.95,6.85,4,3.85,3.25,3.15,3.1,3),ncol=2,byrow=T)
-for (i in 1:nrow(regions)) {
-  inxs = which(regions[i,1] >= ppm & ppm >= regions[i,2])
-  plot.metabolite(metabolite,metabolite,i,X,inxs)
-}
+#for (i in 1:nrow(regions)) {
+#  inxs = which(regions[i,1] >= ppm & ppm >= regions[i,2])
+#  plot.metabolite(metabolite,metabolite,i,X,inxs)
+#}
 inxs = c()
 for (i in 1:nrow(regions)) {
-  inxs = c(inxs,which(regions[i,1] >= ppm & ppm >= regions[i,2]))
+  region.inxs = which(regions[i,1] >= ppm & ppm >= regions[i,2])
+  maxs = apply(X[region.inxs,],2,max)
+  for (j in 1:ncol(X)) {
+    X[region.inxs,j] = X[region.inxs,j]/maxs[j]
+  }
+  inxs = c(inxs,region.inxs)
 }
 X.m = X[inxs,]
 data = cbind(ppm[inxs],X.m)
@@ -53,7 +58,12 @@ write.csv(data,file='Tyrosine/positive_train.csv',quote=F,row.names=F)
 inxs = c()
 regions = matrix(c(7.25,7.15,6.95,6.85,4,3.85,3.25,3.15,3.1,3)+1,ncol=2,byrow=T)
 for (i in 1:nrow(regions)) {
-  inxs = c(inxs,which(regions[i,1] >= ppm & ppm >= regions[i,2]))
+  region.inxs = which(regions[i,1] >= ppm & ppm >= regions[i,2])
+  maxs = apply(X[region.inxs,],2,max)
+  for (j in 1:ncol(X)) {
+    X[region.inxs,j] = X[region.inxs,j]/maxs[j]
+  }
+  inxs = c(inxs,region.inxs)
 }
 X.m = X[inxs,]
 data = cbind(ppm[inxs]+1,X.m)
