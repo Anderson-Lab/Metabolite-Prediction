@@ -3,6 +3,8 @@ library(ggplot2)
 df = read.table('collection_All_,_PVT_Scores_9481.txt',skip=14)
 ppm = df[,1]
 
+difficulty = 10
+
 all.maxs = F
 
 plot.metabolite <- function(dir,metabolite,part,X,inxs) {
@@ -44,6 +46,7 @@ regions = matrix(orig.regions,ncol=2,byrow=T)
 #}
 X = df[,2:ncol(df)]
 inxs = c()
+norm.inxs = list()
 for (i in 1:nrow(regions)) {
   region.inxs = which(regions[i,1] > ppm & ppm > regions[i,2])
 #   if (all.maxs == F) {
@@ -56,6 +59,11 @@ for (i in 1:nrow(regions)) {
 #     X[region.inxs,j] = (X[region.inxs,j]-mins[j])/(maxs[j]-mins[j])
 #   }
   inxs = c(inxs,region.inxs)
+  if (i == 1) {
+    norm.inxs[[i]] = 1:length(region.inxs)
+  } else{
+    norm.inxs[[i]] = max(norm.inxs[[i-1]])+1:length(region.inxs)
+  }
 }
 X.m = X[inxs,]
 # for (i in 2:(nrow(X.m)-1)) {
@@ -64,59 +72,79 @@ X.m = X[inxs,]
 data = cbind(ppm[inxs],X.m)
 colnames(data)[1] = 'ppm'
 colnames(data)[2:ncol(data)] = 1:(ncol(data)-1)
-if (all.maxs == F) {
-  write.csv(data,file='Tyrosine/positive_train.csv',quote=F,row.names=F)
-} else {
-  write.csv(data,file='Tyrosine/positive_train_global_max.csv',quote=F,row.names=F)  
-}
+write.csv(data,file=paste('Tyrosine/positive_train',difficulty,'.csv',sep=""),quote=F,row.names=F)
 ppm.m = ppm[inxs]
 
-nTimes = 20
-n = 1
-while (n <= nTimes) {
-  X = df[,2:ncol(df)]
-  inxs = c()
-  regions = matrix(c(7.25,7.15,6.95,6.85,4,3.85,3.25,3.15,3.1,3),ncol=2,byrow=T)
-  failed = F
-  for (i in 1:nrow(regions)) {
-    shift = runif(1,0.2,1)*sample(c(-1,1),1)
-    region.inxs = which(regions[i,1]+shift >= ppm & ppm >= regions[i,2]+shift)
-#     if (all.maxs == F) {
-#       maxs = apply(X[region.inxs,],2,max)
-#       mins = apply(X[region.inxs,],2,min)
-#     } else {
-#       maxs = apply(X,2,max)    
-#     }
+positive.X = X
+# 
+# X = df[,2:ncol(df)]
+# nTimes = 20
+# n = 1
+# while (n <= nTimes) {
+#   X = df[,2:ncol(df)]
+#   inxs = c()
+#   regions = matrix(c(7.25,7.15,6.95,6.85,4,3.85,3.25,3.15,3.1,3),ncol=2,byrow=T)
+#   failed = F
+#   for (i in 1:nrow(regions)) {
 #     for (j in 1:ncol(X)) {
-#       X[region.inxs,j] = (X[region.inxs,j]-mins[j])/(maxs[j]-mins[j])
+#       shift = runif(1,0.01,2)*sample(c(-1,1),1)
+#       region.inxs = which(regions[i,1]+shift >= ppm & ppm >= regions[i,2]+shift)
+#       X.m[norm.inxs[[i]],j] = X[region.inxs[1:length(norm.inxs[[i]])],j]
 #     }
-    inxs = c(inxs,region.inxs)
-    if (length(which(is.nan(unlist(X[region.inxs,])))) > 0 || length(which(colMeans(X[region.inxs,])==0)) > 0) {
-      print('Failure')
-      failed=T
-      break
-    }
-  }
-  if (failed == F) {
-    if (n == 1) {
-      X.m = X[inxs[1:length(ppm.m)],]
-    } else {
-      X.m = cbind(X.m,X[inxs[1:length(ppm.m)],])
-    }
-    n = n + 1
-  }
-  print(n)
-}
+#     if (length(which(is.nan(unlist(X[region.inxs,])))) > 0 || length(which(colMeans(X[region.inxs,])==0)) > 0) {
+#       print('Failure')
+#       failed=T
+#       break
+#     }
+#     inxs = c(inxs,region.inxs)
+#   }
+#   if (failed == F) {
+# #     if (n == 1) {
+# #       X.m = X[inxs[1:length(ppm.m)],]
+# #     } else {
+# #       X.m = cbind(X.m,X[inxs[1:length(ppm.m)],])
+# #     }
+#     n = n + 1
+#   }
+#   print(n)
+# }
 # 
 # for (i in 2:(nrow(X.m)-1)) {
 #   X.m[i,] = 0.3*X.m[i-1,] + 0.4*X.m[i,] + 0.3*X.m[i+1,]
 # }
 
+regions = matrix(orig.regions,ncol=2,byrow=T)
+norm.inxs = list()
+nTimes = 10
+n = 1
+while (n <= nTimes) {
+  X = df[,2:ncol(df)]
+  inxs = c()
+  for (i in 1:nrow(regions)) {
+    region.inxs = which(regions[i,1] > ppm & ppm > regions[i,2])
+    for (j in 1:ncol(X)) {
+      composites = sample(1:ncol(X),difficulty)
+      X[region.inxs,j] = rowMeans(positive.X[region.inxs,composites])
+    }
+    
+    inxs = c(inxs,region.inxs)
+    if (i == 1) {
+      norm.inxs[[i]] = 1:length(region.inxs)
+    } else{
+      norm.inxs[[i]] = max(norm.inxs[[i-1]])+1:length(region.inxs)
+    }
+    
+  }
+  if (n == 1) {
+    X.m = X[inxs,]
+  } else {
+    X.m = cbind(X.m,X[inxs,])
+  }
+  n = n + 1
+  print(n)
+}
+
 data = cbind(ppm.m,X.m)
 colnames(data)[1] = 'ppm'
 colnames(data)[2:ncol(data)] = 1:(ncol(data)-1)
-if (all.maxs == F) {
-  write.csv(data[1:nrow(data),],file='Tyrosine/negative_train.csv',quote=F,row.names=F)
-} else {
-  write.csv(data[1:nrow(data),],file='Tyrosine/negative_train_global_max.csv',quote=F,row.names=F)  
-}
+write.csv(data,file=paste('Tyrosine/negative_train',difficulty,'.csv',sep=""),quote=F,row.names=F)

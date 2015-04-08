@@ -1,11 +1,12 @@
-positive = read.csv('Tyrosine/positive_train.csv')
-negative = read.csv('Tyrosine/negative_train.csv')
+positive = read.csv('Tyrosine/positive_train2.csv')
+negative = read.csv('Tyrosine/negative_train2.csv')
 
 ppm = positive[,1] # First column are the variable names
 train = t(cbind(positive[,-1],negative[,-1])) # combine them except the first column
 train = as.data.frame(train) # Now convert it to a data frame
 train$label = 0 # Now add in a label column initially set to all 0's
 train$label[1:94] = 1 # Now set the first 94 samples to 1 to indicate they are positive
+train$label = factor(train$label)
 
 colnames(train) = c(ppm,'label') # Now correct the column names
 rownames(train) = 1:nrow(train) # Now add the row names
@@ -76,6 +77,7 @@ library(rpart)
 k = 3
 positive_accuracy = 0
 negative_accuracy = 0
+train_accuracy = 0
 accuracy = 0
 random.order = sample(1:nrow(features),nrow(features))
 features = features[random.order,]
@@ -91,17 +93,24 @@ for (i in 1:k) {
   test.set = features[start:end,]
   train.set = features[-c(start:end),]
   fit <- rpart(label ~ ., data=train.set)
-  predictions = predict(fit,test.set)
+  predictions = predict(fit,test.set,type='vector')-1 # They use 1 to indicate class 1 which is actually 0
   correct_predictions = test.set$label
   accuracy = accuracy + length(which(predictions == correct_predictions))/length(predictions)
   if (length(which(correct_predictions==1)) > 0) {
     positive_accuracy = positive_accuracy + length(which(predictions == correct_predictions & correct_predictions == 1))/length(which(correct_predictions==1))
   }
   negative_accuracy = negative_accuracy + length(which(predictions == correct_predictions & correct_predictions == 0))/length(which(correct_predictions==0))
+
+  predictions = predict(fit,train.set,type='vector')-1 # They use 1 to indicate class 1 which is actually 0
+  correct_predictions = train.set$label
+  train_accuracy = train_accuracy + length(which(predictions == correct_predictions))/length(predictions)
 }
 accuracy = accuracy / k
+train_accuracy = train_accuracy / k
 positive_accuracy = positive_accuracy / k
 negative_accuracy = negative_accuracy / k
+print('The training accuracy is')
+print(train_accuracy)
 print('The accuracy is')
 print(accuracy)
 print('The negative accuracy is')
