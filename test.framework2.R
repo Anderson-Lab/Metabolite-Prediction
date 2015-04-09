@@ -74,6 +74,7 @@ if (engineer_features == T) {
 
 # k-fold cross-validation loop
 library(rpart)
+library(randomForest)
 k = 3
 positive_accuracy = 0
 negative_accuracy = 0
@@ -81,6 +82,9 @@ train_accuracy = 0
 accuracy = 0
 random.order = sample(1:nrow(features),nrow(features))
 features = features[random.order,]
+for (j in 1:(ncol(features)-1)) {
+  colnames(features)[j] = paste('X',j,sep='')
+}
 size = round(nrow(features)/k)
 for (i in 1:k) {
   start = 1 + size*(i-1)
@@ -92,8 +96,10 @@ for (i in 1:k) {
   }
   test.set = features[start:end,]
   train.set = features[-c(start:end),]
-  fit <- rpart(label ~ ., data=train.set)
-  predictions = predict(fit,test.set,type='vector')-1 # They use 1 to indicate class 1 which is actually 0
+  #fit <- rpart(label ~ ., data=train.set)
+  fit <- randomForest(label ~ ., data=train.set)
+  #predictions = predict(fit,test.set,type='vector')-1 # They use 1 to indicate class 1 which is actually 0
+  predictions = predict(fit,test.set,type='response')
   correct_predictions = test.set$label
   accuracy = accuracy + length(which(predictions == correct_predictions))/length(predictions)
   if (length(which(correct_predictions==1)) > 0) {
@@ -101,7 +107,8 @@ for (i in 1:k) {
   }
   negative_accuracy = negative_accuracy + length(which(predictions == correct_predictions & correct_predictions == 0))/length(which(correct_predictions==0))
 
-  predictions = predict(fit,train.set,type='vector')-1 # They use 1 to indicate class 1 which is actually 0
+  #predictions = predict(fit,train.set,type='vector')-1 # They use 1 to indicate class 1 which is actually 0
+  predictions = predict(fit,train.set,type='response') # They use 1 to indicate class 1 which is actually 0
   correct_predictions = train.set$label
   train_accuracy = train_accuracy + length(which(predictions == correct_predictions))/length(predictions)
 }
